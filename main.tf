@@ -1,6 +1,6 @@
 resource "local_file" "stack_backends" {
-  for_each = local.stacks_info
-  filename = "../eks-stacks/${each.key}/backend.tf"
+  for_each = toset(local.stack_dirs)
+  filename = "${each.key}/backend.tf"
   file_permission = "0644"
 
   content = <<EOF

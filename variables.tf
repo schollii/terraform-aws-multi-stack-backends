@@ -4,14 +4,12 @@ locals {
     StateManagement = "Terraform"
     Purpose = "Management of stack tfstate backends in s3"
   })
-
-  stacks_info = {for name, region in var.stacks : format("%s-%s", name, region) => region}
 }
 
-variable "stacks" {
-  type = map(string)
-  default = {}
-  description = "Map of stack names to the region hosted in"
+variable "stack_dirs" {
+  type = list(string)
+  default = []
+  description = "List of stack folder, absolute"
 }
 
 variable "extra_tags" {
