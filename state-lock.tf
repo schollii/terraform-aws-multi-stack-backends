@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "stack_tfstate_backends_lock" {
-  for_each = local.stacks_info
+  for_each = var.stacks_map
 
   name         = "${each.key}-lock-stack-tfstate-s3-backends"
   billing_mode = "PAY_PER_REQUEST"

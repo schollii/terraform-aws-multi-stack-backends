@@ -1,6 +1,6 @@
 resource "local_file" "stack_backends" {
-  for_each = toset(local.stack_dirs)
-  filename = "${each.key}/backend.tf"
+  for_each = var.stacks_map
+  filename = "${each.value}/backend.tf"
   file_permission = "0644"
 
   content = <<EOF

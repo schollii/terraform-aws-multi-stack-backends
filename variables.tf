@@ -6,10 +6,10 @@ locals {
   })
 }
 
-variable "stack_dirs" {
-  type = list(string)
-  default = []
-  description = "List of stack folder, absolute"
+variable "stacks_map" {
+  type = map(string)
+  default = {}
+  description = "Map of unique stack ID to its folder (absolute path)"
 }
 
 variable "extra_tags" {

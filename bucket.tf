@@ -85,7 +85,7 @@ resource "aws_s3_bucket_public_access_block" "tfstate_bucket" {
 }
 
 resource "aws_iam_policy" "tfstate_stack_backends" {
-  for_each = local.stacks_info
+  for_each = var.stacks_map
 
   name = "${each.key}-tfstate-s3-stack-backends"
 
