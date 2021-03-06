@@ -1,5 +1,5 @@
 resource "local_file" "stack_backends" {
-  for_each = var.stacks_map
+  for_each = local.stacks_map
   filename = "${each.value}/backend.tf"
   file_permission = "0644"
 
