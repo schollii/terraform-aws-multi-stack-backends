@@ -6,7 +6,7 @@ locals {
   })
 
   stacks_map = merge(var.stacks_map, (
-    var.this_tfstate_in_s3 ? { mono-s3-backends = "." } : {}
+    var.this_tfstate_in_s3 ? { manager = "." } : {}
   ))
 }
 
