@@ -1,6 +1,6 @@
 resource "local_file" "stack_backends" {
   for_each = local.stacks_map
-  filename = "${each.value}/backend.tf"
+  filename = "${each.key}/backend.tf"
   file_permission = "0644"
 
   content = <<EOF
@@ -11,7 +11,7 @@ terraform {
     encrypt = true
 
     dynamodb_table = "${aws_dynamodb_table.stack_tfstate_backends_lock[each.key].id}"
-    key = "${each.key}/cluster.tfstate"
+    key = "${each.value.stack_id}/${each.value.module_id}/terraform.tfstate"
   }
 }
 EOF

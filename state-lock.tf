@@ -1,7 +1,7 @@
 resource "aws_dynamodb_table" "stack_tfstate_backends_lock" {
   for_each = local.stacks_map
 
-  name         = "${each.key}-lock-stack-tfstate-s3-backends"
+  name         = "${each.value.stack_id}-lock-stack-tfstate-s3-backends"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -11,7 +11,7 @@ resource "aws_dynamodb_table" "stack_tfstate_backends_lock" {
   }
 
   tags = merge(local.tags, {
-    StackID = each.key
+    StackID = each.value.stack_id
   })
 }
 

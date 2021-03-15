@@ -5,15 +5,19 @@ locals {
     Purpose = "Management of stack tfstate backends in s3"
   })
 
+  this_stack_info = { "." = {stack_id="tfstate_backends", module_id="manager"} }
   stacks_map = merge(var.stacks_map, (
-    var.this_tfstate_in_s3 ? { manager = "." } : {}
+    var.this_tfstate_in_s3 ? local.this_stack_info : {}
   ))
 }
 
 variable "stacks_map" {
-  type = map(string)
+  type = map(object({
+    stack_id = string,
+    module_id = string
+  }))
   default = {}
-  description = "Map of unique stack ID to its folder (absolute path)"
+  description = "Map of folder (absolute path) to unique stack ID and module ID"
 }
 
 variable "extra_tags" {

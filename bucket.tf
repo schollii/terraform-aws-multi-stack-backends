@@ -87,7 +87,7 @@ resource "aws_s3_bucket_public_access_block" "tfstate_bucket" {
 resource "aws_iam_policy" "tfstate_stack_backends" {
   for_each = local.stacks_map
 
-  name = "${each.key}-tfstate-s3-stack-backends"
+  name = "${each.value.stack_id}-${each.value.module_id}-tfstate-s3-stack-backends"
 
   policy = <<POLICY
 {
@@ -101,7 +101,7 @@ resource "aws_iam_policy" "tfstate_stack_backends" {
     {
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject"],
-      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${each.key}/*"
+      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${each.value.stack_id}/${each.value.module_id}/*"
     },
     {
       "Effect": "Allow",
@@ -110,7 +110,7 @@ resource "aws_iam_policy" "tfstate_stack_backends" {
         "dynamodb:PutItem",
         "dynamodb:DeleteItem"
       ],
-      "Resource": "${aws_dynamodb_table.stack_tfstate_backends_lock[each.key].arn}"
+      "Resource": "${aws_dynamodb_table.stack_tfstate_backends_lock[each.value.stack_id].arn}"
     },
     {
       "Effect": "Allow",
