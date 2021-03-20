@@ -5,10 +5,8 @@ locals {
     Purpose = "Management of stack tfstate backends in s3"
   })
 
-  this_stack_info = { "." = {stack_id="tfstate_backends", module_id="manager"} }
-  stacks_map = merge(var.stacks_map, (
-    var.this_tfstate_in_s3 ? local.this_stack_info : {}
-  ))
+  this_stack_id = basename(path.module)
+  stacks_map = var.stacks_map
 }
 
 variable "stacks_map" {

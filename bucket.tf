@@ -84,10 +84,8 @@ resource "aws_s3_bucket_public_access_block" "tfstate_bucket" {
   restrict_public_buckets = true
 }
 
-resource "aws_iam_policy" "tfstate_stack_backends" {
-  for_each = local.stacks_map
-
-  name = "${each.value.stack_id}-${each.value.module_id}-tfstate-s3-stack-backends"
+resource "aws_iam_policy" "this_tfstate_backend" {
+  name = "${local.this_stack_id}-tfstate-s3-backend"
 
   policy = <<POLICY
 {
@@ -101,7 +99,7 @@ resource "aws_iam_policy" "tfstate_stack_backends" {
     {
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject"],
-      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${each.value.stack_id}/${each.value.module_id}/*"
+      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${local.this_stack_id}/*"
     },
     {
       "Effect": "Allow",
@@ -110,7 +108,57 @@ resource "aws_iam_policy" "tfstate_stack_backends" {
         "dynamodb:PutItem",
         "dynamodb:DeleteItem"
       ],
-      "Resource": "${aws_dynamodb_table.stack_tfstate_backends_lock[each.value.stack_id].arn}"
+      "Resource": "${aws_dynamodb_table.this_backend_lock.arn}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:ListKeys"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:DescribeKey",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "${aws_kms_key.tfstate_backends.arn}"
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_iam_policy" "tfstate_stack_backend" {
+  for_each = local.stacks_map
+
+  name = "${each.key}-stack-${each.value.module_id}-tfstate-s3-backend"
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "${aws_s3_bucket.tfstate_backends.arn}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${each.key}/${each.value.module_id}/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem"
+      ],
+      "Resource": "${aws_dynamodb_table.stack_tfstate_backend_lock[each.key].arn}"
     },
     {
       "Effect": "Allow",
