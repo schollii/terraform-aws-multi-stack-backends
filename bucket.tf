@@ -1,15 +1,20 @@
 resource "aws_kms_key" "tfstate_backends" {
-  description             = "Key used to encrypt terraform remote states bucket"
+  description             = "Encryption of s3 bucket ${var.backends_bucket_name}"
   deletion_window_in_days = 7
   enable_key_rotation     = true
 
   tags = local.tags
 }
 
+resource "aws_kms_alias" "tfstate_backends" {
+  target_key_id = aws_kms_key.tfstate_backends.id
+  name = "alias/${var.backends_bucket_name}-bucket"
+}
+
 resource "aws_s3_bucket" "tfstate_backends" {
-  bucket        = "tfstate-s3-backends"
-  acl           = "private"
+  bucket        = var.backends_bucket_name
   force_destroy = var.s3_bucket_force_destroy
+  acl           = "private"
 
   versioning {
     enabled = true
@@ -40,8 +45,8 @@ resource "aws_s3_bucket" "tfstate_backends" {
 
       destination {
         bucket             = aws_s3_bucket.replica.arn
-        storage_class      = "STANDARD"
         replica_kms_key_id = aws_kms_key.replica.arn
+        storage_class      = "STANDARD"
       }
     }
   }
@@ -85,7 +90,7 @@ resource "aws_s3_bucket_public_access_block" "tfstate_bucket" {
 }
 
 resource "aws_iam_policy" "this_tfstate_backend" {
-  name = "${local.this_stack_id}-tfstate-s3-backend"
+  name = "${local.manager_stack_id}-backends-manager"
 
   policy = <<POLICY
 {
@@ -99,7 +104,7 @@ resource "aws_iam_policy" "this_tfstate_backend" {
     {
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject"],
-      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${local.this_stack_id}/*"
+      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${var.manager_s3_key_prefix}/*"
     },
     {
       "Effect": "Allow",

@@ -4,11 +4,18 @@
 resource "aws_kms_key" "replica" {
   provider = aws.replica
 
-  description             = "Replication of tfstate s3 backends bucket"
+  description             = "Encryption of s3 bucket ${var.backends_bucket_name} replica"
   deletion_window_in_days = 7
   enable_key_rotation     = true
 
   tags = local.tags
+}
+
+resource "aws_kms_alias" "replica" {
+  provider = aws.replica
+
+  target_key_id = aws_kms_key.replica.id
+  name = "alias/${var.backends_bucket_name}-bucket-replica"
 }
 
 #---------------------------------------------------------------------------------------------------
@@ -16,7 +23,7 @@ resource "aws_kms_key" "replica" {
 # https://docs.aws.amazon.com/AmazonS3/latest/dev/crr-replication-config-for-kms-objects.html
 #---------------------------------------------------------------------------------------------------
 resource "aws_iam_role" "replication" {
-  name = "tfstate-backends-bucket-replication"
+  name = "${var.backends_bucket_name}-bucket-replication"
 
   assume_role_policy = <<POLICY
 {
@@ -37,7 +44,7 @@ POLICY
 }
 
 resource "aws_iam_policy" "replication" {
-  name = "tfstate-backends-bucket-replication"
+  name = "${var.backends_bucket_name}-bucket-replication"
 
   policy = <<POLICY
 {
@@ -108,7 +115,7 @@ POLICY
 }
 
 resource "aws_iam_policy_attachment" "replication" {
-  name = "tfstate-backends-bucket-replication"
+  name = "${var.backends_bucket_name}-bucket-replication"
   roles      = [aws_iam_role.replication.name]
   policy_arn = aws_iam_policy.replication.arn
 }
@@ -150,9 +157,9 @@ data "aws_region" "replica" {
 resource "aws_s3_bucket" "replica" {
   provider = aws.replica
 
-  bucket        = "tfstate-s3-backends-replica"
-  acl = "private"
+  bucket        = "${var.backends_bucket_name}-replica"
   force_destroy = var.s3_bucket_force_destroy
+  acl           = "private"
 
   versioning {
     enabled = true

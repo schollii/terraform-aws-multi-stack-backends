@@ -10,7 +10,7 @@ terraform {
     encrypt = true
 
     dynamodb_table = "${aws_dynamodb_table.this_backend_lock.id}"
-    key = "${local.this_stack_id}/terraform.tfstate"
+    key = "${var.manager_s3_key_prefix}/terraform.tfstate"
   }
 }
 EOF
