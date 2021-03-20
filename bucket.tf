@@ -90,7 +90,7 @@ resource "aws_s3_bucket_public_access_block" "tfstate_bucket" {
 }
 
 resource "aws_iam_policy" "this_tfstate_backend" {
-  name = "${local.manager_stack_id}-backends-manager"
+  name = "${local.manager_stack_id}.backends-manager"
 
   policy = <<POLICY
 {
@@ -140,7 +140,7 @@ POLICY
 resource "aws_iam_policy" "tfstate_stack_backend" {
   for_each = local.stacks_map
 
-  name = "${each.key}-stack-${each.value.module_id}-tfstate-s3-backend"
+  name = "${each.key}.${each.value.module_id}.stack-tfstate-backend"
 
   policy = <<POLICY
 {

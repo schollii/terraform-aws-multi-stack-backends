@@ -29,7 +29,7 @@ variable "backends_bucket_name" {
 
 variable "stacks_map" {
   type = map(object({
-    stack_id = string,
+    path = string,
     module_id = string
   }))
   description = "Map of folder (absolute path) to unique stack ID and module ID"
