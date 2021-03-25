@@ -20,7 +20,7 @@ Example:
 ```hcl
 # your main.tf for the tfstate manager
 module "tfstate_manager" {
-  source = "https://github.com/schollii/terraform-aws-multi-stack-backends.git"
+  source  = "schollii/multi-stack-backends/aws"
 
   stacks_map = {
     stack-1 = {
@@ -46,3 +46,7 @@ module "tfstate_manager" {
 See the [examples/simple/README.md](examples/simple/README.md) for details
 including diagrams that illustrate the different pieces managed by this 
 module. 
+
+### Acknowledgements
+
+My code used some of https://github.com/nozaq/terraform-aws-remote-state-s3-backend as starting point. 
