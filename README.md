@@ -1,19 +1,20 @@
 This terraform module facilitates the management of tfstate backends: 
 
-- a bucket dedicated to storing the tfstate of multiple stacks
+- a bucket dedicated to storing the tfstates of multiple stacks
 - each stack can consist of multiple root modules (eg a root module for
   network, another for databases, another for EKS cluster, etc) each 
   having their own tfstate
 - the `backend.tf` of each root module of each stack is 
-  managed automatically generated
+  automatically generated
 - modifying one root module of a stack locks the whole stack, thereby
   preventing the modification of another root module of the stack which
-  might depend on the first module. 
-- This module's state can also be stored in s3 via `this_tfstate_in_s3`
-  variable. 
+  might depend on the other modules. 
+- This module's state can also be stored in s3 in same bucket (via 
+  `this_tfstate_in_s3` variable). 
   
-The list of stacks to manage is a map of stack id to a map of module ID
-to an object that contains information about the stack (currently just 
+The list of stacks to manage is a tree: 
+
+stack ID -> module ID -> information about the stack (currently just 
 the path). 
 
 Example: 
