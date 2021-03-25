@@ -8,7 +8,7 @@ resource "aws_kms_key" "tfstate_backends" {
 
 resource "aws_kms_alias" "tfstate_backends" {
   target_key_id = aws_kms_key.tfstate_backends.id
-  name = "alias/${var.backends_bucket_name}-bucket"
+  name          = "alias/${var.backends_bucket_name}-bucket"
 }
 
 resource "aws_s3_bucket" "tfstate_backends" {
@@ -137,10 +137,20 @@ resource "aws_iam_policy" "this_tfstate_backend" {
 POLICY
 }
 
-resource "aws_iam_policy" "tfstate_stack_backend" {
-  for_each = local.stacks_map
+locals {
+  iam_stacks_map = merge([
+    for stack_id, modules in var.stacks_map : {
+      for module_id, info in modules : "${stack_id}.${module_id}" => {
+        stack_id = stack_id
+        key_prefix = "${stack_id}/${module_id}"
+      }
+  }]...)
+}
 
-  name = "${each.key}.${each.value.module_id}.stack-tfstate-backend"
+resource "aws_iam_policy" "tfstate_stack_backend" {
+  for_each = local.iam_stacks_map
+
+  name = "${each.key}.stack-tfstate-backend"
 
   policy = <<POLICY
 {
@@ -154,7 +164,7 @@ resource "aws_iam_policy" "tfstate_stack_backend" {
     {
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject"],
-      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${each.key}/${each.value.module_id}/*"
+      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${each.value.key_prefix}/*"
     },
     {
       "Effect": "Allow",
@@ -163,7 +173,7 @@ resource "aws_iam_policy" "tfstate_stack_backend" {
         "dynamodb:PutItem",
         "dynamodb:DeleteItem"
       ],
-      "Resource": "${aws_dynamodb_table.stack_tfstate_backend_lock[each.key].arn}"
+      "Resource": "${aws_dynamodb_table.stack_tfstate_backend_lock[each.value.stack_id].arn}"
     },
     {
       "Effect": "Allow",

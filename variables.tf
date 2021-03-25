@@ -5,8 +5,15 @@ locals {
     Purpose = "Management of tfstate backend of many stacks in s3"
   })
 
-  stacks_map = var.stacks_map
-  manager_stack_id = var.manager_stack_id == null ? replace(basename(path.module), "_", "-") : var.manager_stack_id
+//  stacks_map = [
+//    for stack_id, modules in var.stacks_map : {
+//      for module_id, info in modules: "${stack_id}.${module_id}" => info.path
+//    }
+//  ]
+  manager_stack_id = (var.manager_stack_id == null ?
+    (path.module == "../../.." ? "manager" : replace(basename(path.module), "_", "-") )
+    : var.manager_stack_id
+  )
 }
 
 variable "manager_stack_id" {
@@ -23,16 +30,15 @@ variable "manager_s3_key_prefix" {
 
 variable "backends_bucket_name" {
   type = string
-  description = "Override default name for mono-bucket"
+  description = "Override default name for the tfstates bucket"
   default = "tfstate-s3-backends"
 }
 
 variable "stacks_map" {
-  type = map(object({
+  type = map(map(object({
     path = string,
-    module_id = string
-  }))
-  description = "Map of folder (absolute path) to unique stack ID and module ID"
+  })))
+  description = "Map of stack ID and module ID to their path on local system"
   default = {}
 }
 

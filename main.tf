@@ -16,9 +16,21 @@ terraform {
 EOF
 }
 
+locals {
+  // convert the stacks map to a map of paths to stack and module ID
+  stack_paths_map = merge([
+    for stack_id, modules in var.stacks_map : {
+      for module_id, info in modules: (info.path) => {
+        stack_id = stack_id
+        module_id = module_id
+      }
+    }
+  ]...)
+}
+
 resource "local_file" "stack_backend" {
-  for_each = local.stacks_map
-  filename = "${each.value.path}/backend.tf"
+  for_each = local.stack_paths_map
+  filename = "${each.key}/backend.tf"
   file_permission = "0644"
 
   content = <<EOF
@@ -28,8 +40,8 @@ terraform {
     region = "us-east-1"
     encrypt = true
 
-    dynamodb_table = "${aws_dynamodb_table.stack_tfstate_backend_lock[each.key].id}"
-    key = "${each.key}/${each.value.module_id}/terraform.tfstate"
+    dynamodb_table = "${aws_dynamodb_table.stack_tfstate_backend_lock[each.value.stack_id].id}"
+    key = "${each.value.stack_id}/${each.value.module_id}/terraform.tfstate"
   }
 }
 EOF

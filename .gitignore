@@ -1,2 +1,4 @@
 /.idea/inspectionProfiles/profiles_settings.xml
 /.idea/modules.xml
+/examples/simple/tfstate-s3-manager/.terraform.lock.hcl
+/examples/simple/tfstate-s3-manager/.terraform
