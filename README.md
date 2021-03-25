@@ -42,3 +42,7 @@ module "tfstate_manager" {
   }
 }
 ```
+
+See the [examples/simple/README.md](examples/simple/README.md) for details
+including diagrams that illustrate the different pieces managed by this 
+module. 

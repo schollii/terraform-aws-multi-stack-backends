@@ -1,26 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="4948e5f9-4bc5-41a5-ae51-8e8184c32a41" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/examples/simple/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/diagrams.drawio" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/move-manager-to-s3.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/move-stacks-to-s3.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/stack-backends-setup.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/stack-state-locking.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/stack1-cluster/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/stack1-network/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/stack2-cluster/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/simple/stack2-network/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bucket.tf" beforeDir="false" afterPath="$PROJECT_DIR$/bucket.tf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/simple/stack-cluster/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/simple/stack-network/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/simple/tfstate-s3-manager/main.tf" beforeDir="false" afterPath="$PROJECT_DIR$/examples/simple/tfstate-s3-manager/main.tf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.tf" beforeDir="false" afterPath="$PROJECT_DIR$/main.tf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/state-lock.tf" beforeDir="false" afterPath="$PROJECT_DIR$/state-lock.tf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/variables.tf" beforeDir="false" afterPath="$PROJECT_DIR$/variables.tf" afterDir="false" />
-    </list>
+    <list default="true" id="4948e5f9-4bc5-41a5-ae51-8e8184c32a41" name="Default Changelist" comment="" />
     <disabled>
       <disabled_changelists>
         <list default="true" id="4948e5f9-4bc5-41a5-ae51-8e8184c32a41" name="Default Changelist" comment="" />
@@ -48,6 +29,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="TF_FMT" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/examples/simple" />
     <property name="node.js.detected.package.eslint" value="true" />
@@ -73,8 +55,16 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1616675878005</updated>
-      <workItem from="1616675883227" duration="7935000" />
+      <workItem from="1616675883227" duration="9237000" />
     </task>
+    <task id="LOCAL-00001" summary="Fix all the for_each, add examples with diagrams">
+      <created>1616692122162</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1616692122162</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
