@@ -20,9 +20,10 @@ locals {
   // convert the stacks map to a map of paths to stack and module ID
   stack_paths_map = merge([
     for stack_id, modules in var.stacks_map : {
-      for module_id, info in modules: (info.path) => {
+      for module_id, info in modules: "${stack_id}/${module_id}" => {
         stack_id = stack_id
         module_id = module_id
+        path = info.path
       }
     }
   ]...)
@@ -30,7 +31,7 @@ locals {
 
 resource "local_file" "stack_backend" {
   for_each = local.stack_paths_map
-  filename = "${each.key}/backend.tf"
+  filename = "${each.value.path}/backend.tf"
   file_permission = "0644"
 
   content = <<EOF
