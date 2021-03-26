@@ -12,6 +12,6 @@ provider "aws" {
 }
 
 provider "aws" {
-  alias = "replica"
+  alias  = "replica"
   region = "us-west-1"
 }

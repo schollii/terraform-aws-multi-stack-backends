@@ -1,37 +1,37 @@
 locals {
   tags = merge(var.extra_tags, {
-    IaCDesigners = "oliver@sentianSE.com"
+    IaCDesigners    = "oliver@sentianSE.com"
     StateManagement = "Terraform"
-    Purpose = "Management of tfstate backend of many stacks in s3"
+    Purpose         = "Management of tfstate backend of many stacks in s3"
   })
 
-//  stacks_map = [
-//    for stack_id, modules in var.stacks_map : {
-//      for module_id, info in modules: "${stack_id}.${module_id}" => info.path
-//    }
-//  ]
+  //  stacks_map = [
+  //    for stack_id, modules in var.stacks_map : {
+  //      for module_id, info in modules: "${stack_id}.${module_id}" => info.path
+  //    }
+  //  ]
   manager_stack_id = (var.manager_stack_id == null ?
-    (path.module == "../../.." ? "manager" : replace(basename(path.module), "_", "-") )
+    (path.module == "../../.." ? "manager" : replace(basename(path.module), "_", "-"))
     : var.manager_stack_id
   )
 }
 
 variable "manager_stack_id" {
-  type = string
+  type        = string
   description = "Override stack id for this root module (default: the module name)"
-  default = null
+  default     = null
 }
 
 variable "manager_s3_key_prefix" {
-  type = string
+  type        = string
   description = "Override default stack id for this root module"
-  default = "_manager_"
+  default     = "_manager_"
 }
 
 variable "backends_bucket_name" {
-  type = string
+  type        = string
   description = "Override default name for the tfstates bucket"
-  default = "tfstate-s3-backends"
+  default     = "tfstate-s3-backends"
 }
 
 variable "stacks_map" {
@@ -39,24 +39,24 @@ variable "stacks_map" {
     path = string,
   })))
   description = "Map of stack ID and module ID to their path on local system"
-  default = {}
+  default     = {}
 }
 
 variable "extra_tags" {
-  type = map(string)
+  type        = map(string)
   description = "Any additional tags beyond the default ones created by this module"
-  default = {}
+  default     = {}
 }
 
 variable "s3_bucket_force_destroy" {
-  type = bool
+  type        = bool
   description = "Whether this bucket can be destroyed"
-  default = false
+  default     = false
 }
 
 variable "this_tfstate_in_s3" {
-  type = bool
+  type        = bool
   description = "Whether this module's tfstate should be in s3"
-  default = false
+  default     = false
 }
 

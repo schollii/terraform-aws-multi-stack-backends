@@ -141,7 +141,7 @@ locals {
   iam_stacks_map = merge([
     for stack_id, modules in var.stacks_map : {
       for module_id, info in modules : "${stack_id}.${module_id}" => {
-        stack_id = stack_id
+        stack_id   = stack_id
         key_prefix = "${stack_id}/${module_id}"
       }
   }]...)

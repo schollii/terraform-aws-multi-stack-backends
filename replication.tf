@@ -15,7 +15,7 @@ resource "aws_kms_alias" "replica" {
   provider = aws.replica
 
   target_key_id = aws_kms_key.replica.id
-  name = "alias/${var.backends_bucket_name}-bucket-replica"
+  name          = "alias/${var.backends_bucket_name}-bucket-replica"
 }
 
 #---------------------------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ POLICY
 }
 
 resource "aws_iam_policy_attachment" "replication" {
-  name = "${var.backends_bucket_name}-bucket-replication"
+  name       = "${var.backends_bucket_name}-bucket-replication"
   roles      = [aws_iam_role.replication.name]
   policy_arn = aws_iam_policy.replication.arn
 }
