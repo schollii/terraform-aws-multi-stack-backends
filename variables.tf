@@ -34,6 +34,12 @@ variable "backends_bucket_name" {
   default     = "tfstate-s3-backends"
 }
 
+variable "backend_locks_table_name" {
+  type        = string
+  description = "Override default name for the tfstate locks table"
+  default     = "tfstate-s3-backend-locks"
+}
+
 variable "stacks_map" {
   type = map(map(object({
     path = string,

@@ -1,5 +1,5 @@
-resource "aws_dynamodb_table" "this_backend_lock" {
-  name         = "${local.manager_stack_id}.lock-tfstate-in-s3"
+resource "aws_dynamodb_table" "backend_locks" {
+  name         = var.backend_locks_table_name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -12,21 +12,3 @@ resource "aws_dynamodb_table" "this_backend_lock" {
     StackID = local.manager_stack_id
   })
 }
-
-resource "aws_dynamodb_table" "stack_tfstate_backend_lock" {
-  for_each = var.stacks_map
-
-  name         = "${each.key}.stack-lock-tfstate-in-s3"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-
-  tags = merge(local.tags, {
-    StackID = each.key
-  })
-}
-

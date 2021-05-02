@@ -1,15 +1,16 @@
-This terraform module facilitates the management of tfstate backends: 
+This terraform module facilitates the management of terraform state remote 
+backends: 
 
-- a bucket dedicated to storing the tfstates of multiple stacks
-- each stack can consist of multiple root modules (eg a root module for
-  network, another for databases, another for EKS cluster, etc) each 
-  having their own tfstate
-- the `backend.tf` of each root module of each stack is 
-  automatically generated
-- modifying one root module of a stack locks the whole stack, thereby
-  preventing the modification of another root module of the stack which
-  might depend on the other modules. 
-- This module's state can also be stored in s3 in same bucket (via 
+- One bucket for any number of terraform state.
+- Support for the notion of "stack", consisting of multiple building blocks
+  in the form of terraform root modules. Eg a terraform state for a root 
+  module focussed on a stack's network resources, another state for a root
+  module focussed on a stack's databases, another for a stack's EKS cluster,
+  etc; 
+- Automatic generation of the `backend.tf` of each root module of each 
+  stack, thus eliminating the chicken-and-egg dance that is otherwise 
+  required to provision a new stack
+- Support for storing this module's state in s3 in same bucket (via 
   `this_tfstate_in_s3` variable). 
   
 The list of stacks to manage is a tree: 

@@ -9,7 +9,7 @@ terraform {
     region = "us-east-1"
     encrypt = true
 
-    dynamodb_table = "${aws_dynamodb_table.this_backend_lock.id}"
+    dynamodb_table = "${aws_dynamodb_table.backend_locks.id}"
     key = "${var.manager_s3_key_prefix}/terraform.tfstate"
   }
 }
@@ -41,7 +41,7 @@ terraform {
     region = "us-east-1"
     encrypt = true
 
-    dynamodb_table = "${aws_dynamodb_table.stack_tfstate_backend_lock[each.value.stack_id].id}"
+    dynamodb_table = "${aws_dynamodb_table.backend_locks.id}"
     key = "${each.value.stack_id}/${each.value.module_id}/terraform.tfstate"
   }
 }

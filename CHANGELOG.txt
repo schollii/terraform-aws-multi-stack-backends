@@ -1,0 +1,2 @@
+0.5.2: one bucket, one replica, one dynamodb table per stack
+0.6.0: only one dynamodb table necessary
