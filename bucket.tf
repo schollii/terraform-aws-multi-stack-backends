@@ -90,7 +90,7 @@ resource "aws_s3_bucket_public_access_block" "tfstate_bucket" {
 }
 
 resource "aws_iam_policy" "multi_stack_backends_common" {
-  name = "multi-stack-backends-${local.manager_stack_id}-common"
+  name = "multi-stack-backends.${local.manager_stack_id}.common"
 
   policy = <<POLICY
 {
@@ -133,7 +133,7 @@ POLICY
 }
 
 resource "aws_iam_policy" "multi_stack_backends_manager" {
-  name = "multi-stack-backends-${local.manager_stack_id}-manager"
+  name = "multi-stack-backends.${local.manager_stack_id}.manager"
 
   policy = <<POLICY
 {
@@ -162,7 +162,7 @@ locals {
 resource "aws_iam_policy" "multi_stack_backends_module" {
   for_each = local.iam_stacks_map
 
-  name = "multi-stack-backends-${local.manager_stack_id}-${each.key}"
+  name = "multi-stack-backends.${local.manager_stack_id}.${each.key}"
 
   policy = <<POLICY
 {
@@ -181,7 +181,7 @@ POLICY
 resource "aws_iam_policy" "multi_stack_backends_stack" {
   for_each = var.stacks_map
 
-  name = "multi-stack-backends-${local.manager_stack_id}-${each.key}"
+  name = "multi-stack-backends.${local.manager_stack_id}.${each.key}"
 
   policy = <<POLICY
 {
