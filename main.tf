@@ -37,12 +37,12 @@ resource "local_file" "stack_backend" {
   content = <<EOF
 terraform {
   backend "s3" {
-    bucket = "${aws_s3_bucket.tfstate_backends.id}"
-    region = "us-east-1"
+    bucket  = "${aws_s3_bucket.tfstate_backends.id}"
+    region  = "us-east-1"
     encrypt = true
 
     dynamodb_table = "${aws_dynamodb_table.backend_locks.id}"
-    key = "${each.value.stack_id}/${each.value.module_id}/terraform.tfstate"
+    key            = "${each.value.stack_id}/${each.value.module_id}/terraform.tfstate"
   }
 }
 EOF
