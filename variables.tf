@@ -7,9 +7,8 @@ locals {
 
   // if manager specified, use it, but otherwise, it is the module's name with underscores
   // replaced by dash, except if module source is local then it is just manager
-  module_path = path.module == "../../.." ? abspath(path.root) : replace(basename(path.module))
   manager_stack_id = (var.manager_stack_id == null ?
-    replace(basename(local.module_path), "_", "-")
+    replace(basename(abspath(path.root)), "_", "-")
     : var.manager_stack_id
   )
 }
