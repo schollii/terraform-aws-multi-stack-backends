@@ -22,6 +22,7 @@ variable "stacks_map" {
 
 module "tfstate_manager" {
   source = "../../.."
+  //  source  = "schollii/multi-stack-backends/aws"
 
   stacks_map = var.stacks_map
 }

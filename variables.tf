@@ -5,13 +5,11 @@ locals {
     Purpose         = "Management of tfstate backend of many stacks in s3"
   })
 
-  //  stacks_map = [
-  //    for stack_id, modules in var.stacks_map : {
-  //      for module_id, info in modules: "${stack_id}.${module_id}" => info.path
-  //    }
-  //  ]
+  // if manager specified, use it, but otherwise, it is the module's name with underscores
+  // replaced by dash, except if module source is local then it is just manager
+  module_path = path.module == "../../.." ? abspath(path.root) : replace(basename(path.module))
   manager_stack_id = (var.manager_stack_id == null ?
-    (path.module == "../../.." ? "manager" : replace(basename(path.module), "_", "-"))
+    replace(basename(local.module_path), "_", "-")
     : var.manager_stack_id
   )
 }

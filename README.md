@@ -6,12 +6,15 @@ backends:
   in the form of terraform root modules. Eg a terraform state for a root 
   module focussed on a stack's network resources, another state for a root
   module focussed on a stack's databases, another for a stack's EKS cluster,
-  etc; 
+  etc.
 - Automatic generation of the `backend.tf` of each root module of each 
   stack, thus eliminating the chicken-and-egg dance that is otherwise 
-  required to provision a new stack
+  required to provision a new stack.
 - Support for storing this module's state in s3 in same bucket (via 
-  `this_tfstate_in_s3` variable). 
+  `this_tfstate_in_s3` variable).
+- Generate policies that can be used to control access to the backends 
+  manager, to all modules of specific stacks, or to each stack module 
+  individually.
   
 The list of stacks to manage is a tree: 
 
