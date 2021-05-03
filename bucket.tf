@@ -173,7 +173,7 @@ resource "aws_iam_policy" "tfstate_stack_backend" {
         "dynamodb:PutItem",
         "dynamodb:DeleteItem"
       ],
-      "Resource": "${aws_dynamodb_table.stack_tfstate_backend_lock[each.value.stack_id].arn}"
+      "Resource": "${aws_dynamodb_table.backend_locks.arn}"
     },
     {
       "Effect": "Allow",
