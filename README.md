@@ -1,22 +1,26 @@
-This terraform module facilitates the management of terraform state remote 
-backends: 
+This terraform module facilitates the management of infrastructure represented
+by multiple terraform states in S3: 
 
-- One bucket for any number of terraform state.
-- Support for the notion of "stack", consisting of multiple building blocks
-  in the form of terraform root modules. Eg a terraform state for a root 
-  module focussed on a stack's network resources, another state for a root
-  module focussed on a stack's databases, another for a stack's EKS cluster,
-  etc.
+- Creates one bucket to store all tf states you configure it to manage; so you 
+  create the bucket and associated replication / IAM once, and never worry about 
+  shared tf state again
+- Supports the subdivision of a "stack" into multiple terraform root 
+  modules. Each stack has its own base key in the bucket managed by 
+  multi-stack-backends. Eg a stack consisting of a root module for the VPC + 
+  network (subnets etc), another root module for the databases, and another 
+  root module for the EKS cluster, would have all 3 associated tf states
+  under "s3://multi-tfstate-bucket/your-stack-name".
+- One tfvars file shows all stacks managed by a multi-stack-backends 
+  instance, and all root-modules in that stack. No more guessing which 
+  root modules are interrelated!
 - Automatic generation of the `backend.tf` of each root module of each 
-  stack, thus eliminating the chicken-and-egg dance that is otherwise 
-  required to provision a new stack.
-- Support for storing this module's state in s3 in same bucket (via 
-  `this_tfstate_in_s3` variable).
-- Generate policies that can be used to control access to the backends 
-  manager, to all modules of specific stacks, or to each stack module 
-  individually.
+  stack mentioned in the tfvars file, thus eliminating the chicken-and-egg 
+  dance that is otherwise required to provision each root module for sharing
+  in AWS S3.
+- Bucket replication and versioning and IAM roles to limit access to individual 
+  stack states
   
-The list of stacks to manage is a tree: 
+The list of stacks to manage is represented in a tfvars file: 
 
 stack ID -> module ID -> information about the stack (currently just 
 the path). 
@@ -40,8 +44,11 @@ module "tfstate_manager" {
       network = {
         path = "../stack2-network"
       }
-      cluster = {
-        path = "../stack2-cluster"
+      fargate = {
+        path = "../stack2-fargate"
+      }
+      databases = {
+        path = "../stack2-databases"
       }
     },
   }
