@@ -1,9 +1,8 @@
 locals {
-  tags = merge(var.extra_tags, {
-    IaCDesigners    = "oliver@sentianSE.com"
+  tags = merge({
     StateManagement = "Terraform"
-    Purpose         = "Management of tfstate backend of many stacks in s3"
-  })
+    Purpose         = "Management of multiple tfstate backends in s3"
+  }, var.extra_tags)
 
   // if manager specified, use it, but otherwise, it is the module's name with underscores
   // replaced by dash, except if module source is local then it is just manager
