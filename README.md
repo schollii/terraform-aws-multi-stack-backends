@@ -30,25 +30,26 @@ Example:
 # your main.tf for the tfstate manager
 module "tfstate_manager" {
   source  = "schollii/multi-stack-backends/aws"
+  version = "0.6.1"
 
   stacks_map = {
     stack-1 = {
       network = {
-        path = "../stack1-network"
+        path = "../stack1/network"
       }
       cluster = {
-        path = "../stack1-cluster"
+        path = "../stack1/cluster"
       }
     },
     stack-2 = {
       network = {
-        path = "../stack2-network"
+        path = "../stack2/network"
       }
       fargate = {
-        path = "../stack2-fargate"
+        path = "../stack2/fargate"
       }
       databases = {
-        path = "../stack2-databases"
+        path = "../stack2/databases"
       }
     },
   }
