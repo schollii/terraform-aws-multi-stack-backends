@@ -1,26 +1,22 @@
-This terraform module facilitates the management of infrastructure represented
-by multiple terraform states in S3: 
+This terraform module facilitates the management of terraform state remote 
+backends: 
 
-- Creates one bucket to store all tf states you configure it to manage; so you 
-  create the bucket and associated replication / IAM once, and never worry about 
-  shared tf state again
-- Supports the subdivision of a "stack" into multiple terraform root 
-  modules. Each stack has its own base key in the bucket managed by 
-  multi-stack-backends. Eg a stack consisting of a root module for the VPC + 
-  network (subnets etc), another root module for the databases, and another 
-  root module for the EKS cluster, would have all 3 associated tf states
-  under "s3://multi-tfstate-bucket/your-stack-name".
-- One tfvars file shows all stacks managed by a multi-stack-backends 
-  instance, and all root-modules in that stack. No more guessing which 
-  root modules are interrelated!
+- One bucket for any number of terraform state.
+- Support for the notion of "stack", consisting of multiple building blocks
+  in the form of terraform root modules. Eg a terraform state for a root 
+  module focussed on a stack's network resources, another state for a root
+  module focussed on a stack's databases, another for a stack's EKS cluster,
+  etc.
 - Automatic generation of the `backend.tf` of each root module of each 
-  stack mentioned in the tfvars file, thus eliminating the chicken-and-egg 
-  dance that is otherwise required to provision each root module for sharing
-  in AWS S3.
-- Bucket replication and versioning and IAM roles to limit access to individual 
-  stack states
+  stack, thus eliminating the chicken-and-egg dance that is otherwise 
+  required to provision a new stack.
+- Support for storing this module's state in s3 in same bucket (via 
+  `this_tfstate_in_s3` variable).
+- Generate policies that can be used to control access to the backends 
+  manager, to all modules of specific stacks, or to each stack module 
+  individually.
   
-The list of stacks to manage is represented in a tfvars file: 
+The list of stacks to manage is a tree: 
 
 stack ID -> module ID -> information about the stack (currently just 
 the path). 
@@ -30,26 +26,22 @@ Example:
 # your main.tf for the tfstate manager
 module "tfstate_manager" {
   source  = "schollii/multi-stack-backends/aws"
-  version = "0.6.1"
 
   stacks_map = {
     stack-1 = {
       network = {
-        path = "../stack1/network"
+        path = "../stack1-network"
       }
       cluster = {
-        path = "../stack1/cluster"
+        path = "../stack1-cluster"
       }
     },
     stack-2 = {
       network = {
-        path = "../stack2/network"
+        path = "../stack2-network"
       }
-      fargate = {
-        path = "../stack2/fargate"
-      }
-      databases = {
-        path = "../stack2/databases"
+      cluster = {
+        path = "../stack2-cluster"
       }
     },
   }

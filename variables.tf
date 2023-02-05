@@ -1,17 +1,3 @@
-locals {
-  tags = merge({
-    StateManagement = "Terraform"
-    Purpose         = "Management of multiple tfstate backends in s3"
-  }, var.extra_tags)
-
-  // if manager specified, use it, but otherwise, it is the module's name with underscores
-  // replaced by dash, except if module source is local then it is just manager
-  manager_stack_id = (var.manager_stack_id == null ?
-    replace(basename(abspath(path.root)), "_", "-")
-    : var.manager_stack_id
-  )
-}
-
 variable "manager_stack_id" {
   type        = string
   description = "Override stack id for this root module (default: the module name)"
@@ -26,8 +12,7 @@ variable "manager_s3_key_prefix" {
 
 variable "backends_bucket_name" {
   type        = string
-  description = "Override default name for the tfstates bucket"
-  default     = "tfstate-s3-backends"
+  description = "Name of the tfstate backends bucket (must be unique across AWS region)"
 }
 
 variable "backend_locks_table_name" {
@@ -50,7 +35,7 @@ variable "extra_tags" {
   default     = {}
 }
 
-variable "s3_bucket_force_destroy" {
+variable "buckets_force_destroy" {
   type        = bool
   description = "Whether this bucket can be destroyed"
   default     = false
@@ -62,3 +47,14 @@ variable "this_tfstate_in_s3" {
   default     = false
 }
 
+variable "create_tfstate_access_policies_for_stacks" {
+  type        = bool
+  description = "Whether to create the IAM policies for accessing the tfstates stored in backends bucket (for manual assignment to IAM users/roles/groups)"
+  default     = false
+}
+
+variable "create_tfstate_access_policy_for_manager" {
+  type        = bool
+  description = "Whether to create the IAM policies for accessing the tfstates stored in backends bucket (for manual assignment to IAM users/roles/groups)"
+  default     = false
+}

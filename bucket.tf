@@ -13,45 +13,57 @@ resource "aws_kms_alias" "tfstate_backends" {
 
 resource "aws_s3_bucket" "tfstate_backends" {
   bucket        = var.backends_bucket_name
-  force_destroy = var.s3_bucket_force_destroy
-  acl           = "private"
-
-  versioning {
-    enabled = true
-  }
-
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm     = "aws:kms"
-        kms_master_key_id = aws_kms_key.tfstate_backends.arn
-      }
-    }
-  }
-
-  replication_configuration {
-    role = aws_iam_role.replication.arn
-
-    rules {
-      id     = "replica_configuration"
-      prefix = ""
-      status = "Enabled"
-
-      source_selection_criteria {
-        sse_kms_encrypted_objects {
-          enabled = true
-        }
-      }
-
-      destination {
-        bucket             = aws_s3_bucket.replica.arn
-        replica_kms_key_id = aws_kms_key.replica.arn
-        storage_class      = "STANDARD"
-      }
-    }
-  }
+  force_destroy = var.buckets_force_destroy
 
   tags = local.tags
+}
+
+resource "aws_s3_bucket_acl" "tfstate_backends" {
+  bucket = aws_s3_bucket.tfstate_backends.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_versioning" "tfstate_backends" {
+  bucket = aws_s3_bucket.tfstate_backends.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate_backends" {
+  bucket = aws_s3_bucket.tfstate_backends.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.tfstate_backends.arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_replication_configuration" "tfstate_backends" {
+  bucket = aws_s3_bucket.tfstate_backends.id
+  role   = aws_iam_role.replication.arn
+
+  rule {
+    id     = "replica_configuration"
+    filter { prefix = "" }
+    status = "Enabled"
+
+    source_selection_criteria {
+      sse_kms_encrypted_objects {
+        status = "Enabled"
+      }
+    }
+
+    destination {
+      bucket             = aws_s3_bucket.replica.arn
+      encryption_configuration {
+        replica_kms_key_id = aws_kms_key.replica.arn
+      }
+      storage_class      = "STANDARD"
+    }
+  }
 }
 
 data "aws_iam_policy_document" "state_force_ssl" {
@@ -133,7 +145,8 @@ POLICY
 }
 
 resource "aws_iam_policy" "multi_stack_backends_manager" {
-  name = "multi-stack-backends.${local.manager_stack_id}.manager"
+  count = var.create_tfstate_access_policy_for_manager ? 1 : 0
+  name  = "multi-stack-backends.${local.manager_stack_id}.manager"
 
   policy = <<POLICY
 {
@@ -150,13 +163,13 @@ POLICY
 }
 
 locals {
-  iam_stacks_map = merge([
+  iam_stacks_map = var.create_tfstate_access_policies_for_stacks ? merge([
     for stack_id, modules in var.stacks_map : {
       for module_id, info in modules : "${stack_id}.${module_id}" => {
         stack_id   = stack_id
         key_prefix = "${stack_id}/${module_id}"
       }
-  }]...)
+  }]...) : {}
 }
 
 resource "aws_iam_policy" "multi_stack_backends_module" {
@@ -179,7 +192,7 @@ POLICY
 }
 
 resource "aws_iam_policy" "multi_stack_backends_stack" {
-  for_each = var.stacks_map
+  for_each = local.iam_stacks_map
 
   name = "multi-stack-backends.${local.manager_stack_id}.${each.key}"
 
