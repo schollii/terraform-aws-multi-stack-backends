@@ -57,7 +57,7 @@ module.
 ## Renaming the tfstates bucket
 
 It may happen that the backends bucket name needs changing, eg following some naming policy
-changes in your organization. AWS does not provide a means of doing this directly. 
+changes in your organization. AWS does not provide a means of doing this directly.
 Here is the procedure that I use:
 
 1. set `this_tfstate_in_s3` to false and comment out the items in `stacks_map`
@@ -112,26 +112,32 @@ have many sub-stacks. HOWEVER I have not tested yet, so please test it first.
   are not needed by the module, they are merely a convenience (making it easy for you to control
   access to the tfstates stored in the backend bucket). To generate the policies as in 0.6, set one
   or both `create_tfstate_access_polic*` variables to true, depending on your needs.
+- The module no longer assumes a default set of tags. Only `var.extra_tags` is used, and 
+  by default it is empty. The terraform plan will clearly say what the old values were, if you
+  need some of them. 
 - The module now requires a value for `backends_bucket_name`. This won't likely affect you because
-  you almost certainly had to specify a name anyway, due to AWS uniqueness constraints on S3 bucket
-  names. But if you somehow got away with not specifying it, you must now
-  add `backends_bucket_name = "tfstate-s3-backends"`. However, I highly recommend that you rename
-  your backends bucket to something unique to you or your organization / employer.
-  Eg `ORG_NAME-GROUP_NAME-tfstate-backends`. The procedure to do this is in a separate section of
-  this readme.
+  you almost certainly had to specify a name anyway, due
+  to [AWS uniqueness constraints on S3 bucket names](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html).
+  But if you were able to not specify it (indicating you were probably the first to use that default
+  name in yours AWS partition), you must now add `backends_bucket_name = "tfstate-s3-backends"`.
+  However, I highly recommend that you rename your backends bucket to something unique to you or
+  your organization / employer. Eg `ORG_NAME-GROUP_NAME-tfstate-backends`. The procedure to do this
+  is in a separate section of this readme.
 - The module now uses the `aws_s3_bucket_*` resources instead of the inline blocks that the AWS
   provider has deprecated, like acl, server-side encryption, etc. This will cause terraform to
-  plan generating those resources, unless you import them into your tfstate. To do this, run the
-  following import commands in a shell, after setting `BACKENDS_BUCKET_NAME` to the value of
-  `backends_bucket_name`:
+  plan generating those resources, unless you import them into your tfstate. I use the following
+  bash script, where `BACKENDS_BUCKET_NAME` is an env var holding the value
+  of `backends_bucket_name`:
   ```
-  terraform import module.tfstate_backends.module.multi_stack_backends.aws_s3_bucket_acl.replica $BACKENDS_BUCKET_NAME
-  terraform import module.tfstate_backends.module.multi_stack_backends.aws_s3_bucket_acl.tfstate_backends $BACKENDS_BUCKET_NAME
-  terraform import module.tfstate_backends.module.multi_stack_backends.aws_s3_bucket_replication_configuration.tfstate_backends $BACKENDS_BUCKET_NAME
-  terraform import module.tfstate_backends.module.multi_stack_backends.aws_s3_bucket_server_side_encryption_configuration.tfstate_backends $BACKENDS_BUCKET_NAME
-  terraform import module.tfstate_backends.module.multi_stack_backends.aws_s3_bucket_versioning.replica $BACKENDS_BUCKET_NAME
-  terraform import module.tfstate_backends.module.multi_stack_backends.aws_s3_bucket_versioning.tfstate_backends $BACKENDS_BUCKET_NAME
+  tf_resources=$(terraform plan | grep "will be created" | grep aws_s3_bucket_ | cut -f 4 -d " ")
+  for resource in $tf_resources; do
+    echo "$resource" "$BACKENDS_BUCKET_NAME"  
+    # terraform import "$resource" "$BACKENDS_BUCKET_NAME"
+  done
   ```
+  The actual terraform import is commented out as a reminder to first verify that this matches
+  what `aws_s3_bucket_*` resources the terraform plan was proposing to create. Once verified,
+  run it with the import uncommented.
 
 ## Acknowledgements
 
