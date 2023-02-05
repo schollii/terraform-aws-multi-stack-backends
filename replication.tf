@@ -46,7 +46,7 @@ POLICY
 resource "aws_iam_policy" "replication" {
   name = "${var.backends_bucket_name}-bucket-replication"
 
-  policy = templatefile("${path.module}/replica_policy.json.tmpl", {
+  policy = templatefile("${path.module}/templates/replica_policy.json.tmpl", {
     tfstate_backends_region      = data.aws_region.tfstate_backends.name
     tfstate_backends_bucket_arn  = aws_s3_bucket.tfstate_backends.arn
     tfstate_backends_kms_key_arn = aws_kms_key.tfstate_backends.arn

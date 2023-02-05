@@ -125,19 +125,10 @@ have many sub-stacks. HOWEVER I have not tested yet, so please test it first.
   is in a separate section of this readme.
 - The module now uses the `aws_s3_bucket_*` resources instead of the inline blocks that the AWS
   provider has deprecated, like acl, server-side encryption, etc. This will cause terraform to
-  plan generating those resources, unless you import them into your tfstate. I use the following
-  bash script, where `BACKENDS_BUCKET_NAME` is an env var holding the value
-  of `backends_bucket_name`:
-  ```
-  tf_resources=$(terraform plan | grep "will be created" | grep aws_s3_bucket_ | cut -f 4 -d " ")
-  for resource in $tf_resources; do
-    echo "$resource" "$BACKENDS_BUCKET_NAME"  
-    # terraform import "$resource" "$BACKENDS_BUCKET_NAME"
-  done
-  ```
-  The actual terraform import is commented out as a reminder to first verify that this matches
-  what `aws_s3_bucket_*` resources the terraform plan was proposing to create. Once verified,
-  run it with the import uncommented.
+  plan generating those resources, unless you import them into your tfstate. I use the bash script
+  `scripts/upgrade-to-1.0.sh`. I recommend echoing the terraform command that will be run to 
+  verify that it makes sense, as there are too many possibilities to say for sure that the 
+  script will work as-is.
 
 ## Acknowledgements
 

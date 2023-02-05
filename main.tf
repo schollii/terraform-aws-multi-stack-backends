@@ -26,7 +26,7 @@ resource "local_file" "this_backend" {
   filename        = "${path.root}/backend.tf"
   file_permission = "0644"
 
-  content = templatefile("${path.module}/manager_backend.tf.tmpl", {
+  content = templatefile("${path.module}/templates/manager_backend.tf.tmpl", {
     tfstate_lock_dyndb_table_id = aws_dynamodb_table.backend_locks.id
     tfstate_backends_bucket_id  = aws_s3_bucket.tfstate_backends.id
     tfstate_backends_s3_obj_key = "${var.manager_s3_key_prefix}/terraform.tfstate"
@@ -38,7 +38,7 @@ resource "local_file" "stack_backend" {
   filename        = "${each.value.path}/backend.tf"
   file_permission = "0644"
 
-  content = templatefile("${path.module}/manager_backend.tf.tmpl", {
+  content = templatefile("${path.module}/templates/manager_backend.tf.tmpl", {
     tfstate_lock_dyndb_table_id = aws_dynamodb_table.backend_locks.id
     tfstate_backends_bucket_id  = aws_s3_bucket.tfstate_backends.id
     tfstate_backends_s3_obj_key = "${each.value.stack_id}/${each.value.module_id}/terraform.tfstate"
