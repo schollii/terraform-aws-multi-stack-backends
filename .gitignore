@@ -9,6 +9,6 @@
 **/.terraform.lock.hcl
 **/.terraform
 **/terraform.tfstate
-**/terraform.tfstate.*.backup
+**/terraform.tfstate*.backup
 /examples/simple/*/backend.tf
 /test/go.*
