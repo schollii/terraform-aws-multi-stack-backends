@@ -21,8 +21,18 @@ variable "stacks_map" {
 }
 
 module "tfstate_manager" {
-  source = "../../.."
   //  source  = "schollii/multi-stack-backends/aws"
+  source = "../../.."
 
-  stacks_map = var.stacks_map
+  providers = {
+    aws         = aws.tfstate_backends
+    aws.replica = aws.tfstate_backends_replica
+  }
+
+  stacks_map           = var.stacks_map
+  backends_bucket_name = "schollii-tf-aws-multi-stack-backends-test"
+}
+
+output "tfstate_backends_manager" {
+  value = module.tfstate_manager
 }
