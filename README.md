@@ -1,17 +1,14 @@
-This terraform module facilitates the management of terraform state remote
-backends:
+This terraform module facilitates the management of terraform state remote backends:
 
-- One bucket for any number of terraform state.
-- Support for the notion of "stack", consisting of multiple building blocks
-  in the form of terraform root modules. Eg a terraform state for a root
-  module focussed on a stack's network resources, another state for a root
-  module focussed on a stack's databases, another for a stack's EKS cluster,
-  etc.
-- Automatic generation of the `backend.tf` of each sub-stack (ie root module) of each
-  stack, thus eliminating the chicken-and-egg dance that is otherwise
-  required to provision a new stack.
-- Support for storing this module's state in s3 in same bucket (via
-  `this_tfstate_in_s3` variable).
+- One bucket for any number of terraform tfstates.
+- Based on the notion of "stacks", each consisting of multiple building blocks in the form of
+  terraform root modules (called sub-stacks). Eg a terraform state for a root module focussed on a
+  stack's network resources, another state for a root module focussed on a stack's databases,
+  another for a stack's EKS cluster, etc.
+- Automatic generation of the `backend.tf` of each sub-stack (ie root module) of each stack, thus
+  eliminating the chicken-and-egg dance that is otherwise required to provision a new stack.
+- Support for storing this module's state in s3 in same bucket (via `manager_tfstate_in_s3`
+  variable).
 - Generate policies that can be used to control access to the backends
   manager, and to all sub-stacks of specific stacks.
 
@@ -60,17 +57,17 @@ It may happen that the backends bucket (and therefore its replica) need to be re
 some naming policy changes in your organization. AWS does not provide a means of doing this
 directly. The following procedure is one that I use.
 
-1. WARN your team that no one can use terraform on this terraform module, and ENSURE THAT 
-   TERRAFORM PLAN SHOWS NO CHANGES NEEDED
+1. WARN your team that no one can use terraform on this terraform module, and ENSURE THAT
+   TERRAFORM PLAN SHOWS NO CHANGES NEEDED.
 2. change the value of `backends_bucket_name` (this new value is referred to here
-   as `NEW_BACKENDS_BUCKET_NAME`)
-3. determine the path to the manager module in your tfstate. The easiest is to run `terraform state list | grep aws_s3_bucket look at your code or output of
-   terraform state list)
-4. run `script/rename-backends-manager-bucket.sh NEW_BUCKET_NAME MODULE_PATH` (per the license 
-   terms, this is provided as-is without any warranty - you assume all responsibility!)
-5. If you had any `terraform_remote_state` in your sub-stacks, point them to the new bucket name
-6. run `terraform apply` in any of the sub-stacks, this should show no init and no changes needed
-7. manually delete the 2 old buckets when you are satisfied
+   as `NEW_BACKENDS_BUCKET_NAME`).
+3. determine the path to the manager module in your tfstate. The easiest is to run `terraform state
+   list | grep aws_s3_bucket` look at your code or output of terraform state list).
+4. run `script/rename-backends-manager-bucket.sh NEW_BUCKET_NAME MODULE_PATH` (per the license
+   terms, this is provided as-is without any warranty - you assume all responsibility!).
+5. If you had any `terraform_remote_state` in your sub-stacks, point them to the new bucket name.
+6. run `terraform apply` in any of the sub-stacks, this should show no init and no changes needed.
+7. manually delete the 2 old buckets when you are satisfied it is safe to do so.
 
 ## Upgrades
 
