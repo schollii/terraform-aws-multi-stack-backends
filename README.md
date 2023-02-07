@@ -108,13 +108,13 @@ have many sub-stacks. HOWEVER I have not tested yet, so please test it first.
 
 ### 0.6.x to 1.0
 
-- The module no longer assumes that IAM policies for the tfstate access are needed. These policies
+- The module no longer assumes that IAM policies for the tfstate access are required. These policies
   are not needed by the module, they are merely a convenience (making it easy for you to control
   access to the tfstates stored in the backend bucket). To generate the policies as in 0.6, set one
   or both `create_tfstate_access_polic*` variables to true, depending on your needs.
-- The module no longer assumes a default set of tags. Only `var.extra_tags` is used, and 
+- The module no longer assumes a default set of tags. Only `var.extra_tags` is used, and
   by default it is empty. The terraform plan will clearly say what the old values were, if you
-  need some of them. 
+  need some of them.
 - The module now requires a value for `backends_bucket_name`. This won't likely affect you because
   you almost certainly had to specify a name anyway, due
   to [AWS uniqueness constraints on S3 bucket names](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html).
@@ -123,14 +123,37 @@ have many sub-stacks. HOWEVER I have not tested yet, so please test it first.
   However, I highly recommend that you rename your backends bucket to something unique to you or
   your organization / employer. Eg `ORG_NAME-GROUP_NAME-tfstate-backends`. The procedure to do this
   is in a separate section of this readme.
+- The module no longer defines providers, as recommended in the terraform documentation. Therefore,
+  before applying,
+    - ensure you have these two blocks (as done in `examples/simple/tfstate-s3-manager/terraform.tf`):
+      ```hcl
+      provider "aws" {
+        alias  = "tfstate_backends"
+        region = "us-east-1"
+      }
+    
+      provider "aws" {
+        alias  = "tfstate_backends_replica"
+        region = "us-west-1"
+      }
+      ```
+    - add the following to the module block that references this module (as done in 
+      `examples/simple/tfstate-s3-manager/terraform.tf`):
+      ```hcl
+      providers = {
+        aws = aws.tfstate_backends
+        aws.replica = aws.tfstate_backends_replica
+      }
+      ```
 - The module now uses the `aws_s3_bucket_*` resources instead of the inline blocks that the AWS
   provider has deprecated, like acl, server-side encryption, etc. This will cause terraform to
   plan generating those resources, unless you import them into your tfstate. I use the bash script
-  `scripts/upgrade-to-1.0.sh`. I recommend echoing the terraform command that will be run to 
-  verify that it makes sense, as there are too many possibilities to say for sure that the 
+  `scripts/upgrade-to-1.0.sh`. I recommend echoing the terraform command that will be run to
+  verify that it makes sense, as there are too many possibilities to say for sure that the
   script will work as-is.
 
 ## Acknowledgements
 
 My code used some of https://github.com/nozaq/terraform-aws-remote-state-s3-backend as starting
 point. 
+
