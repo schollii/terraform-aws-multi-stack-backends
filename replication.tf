@@ -46,72 +46,15 @@ POLICY
 resource "aws_iam_policy" "replication" {
   name = "${var.backends_bucket_name}-bucket-replication"
 
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "s3:GetReplicationConfiguration",
-        "s3:ListBucket"
-      ],
-      "Effect": "Allow",
-      "Resource": [
-        "${aws_s3_bucket.tfstate_backends.arn}"
-      ]
-    },
-    {
-      "Action": [
-        "s3:GetObjectVersionForReplication",
-        "s3:GetObjectVersionAcl"
-      ],
-      "Effect": "Allow",
-      "Resource": [
-        "${aws_s3_bucket.tfstate_backends.arn}/*"
-      ]
-    },
-    {
-      "Action": [
-        "s3:ReplicateObject",
-        "s3:ReplicateDelete"
-      ],
-      "Effect": "Allow",
-      "Resource": "${aws_s3_bucket.replica.arn}/*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "kms:Decrypt"
-      ],
-      "Resource": "${aws_kms_key.tfstate_backends.arn}",
-      "Condition": {
-        "StringLike": {
-          "kms:ViaService": "s3.${data.aws_region.tfstate_backends.name}.amazonaws.com",
-          "kms:EncryptionContext:aws:s3:arn": [
-            "${aws_s3_bucket.tfstate_backends.arn}/*"
-          ]
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "kms:Encrypt",
-        "kms:GenerateDataKey"
-      ],
-      "Resource": "${aws_kms_key.replica.arn}",
-      "Condition": {
-        "StringLike": {
-          "kms:ViaService": "s3.${data.aws_region.replica.name}.amazonaws.com",
-          "kms:EncryptionContext:aws:s3:arn": [
-            "${aws_s3_bucket.replica.arn}/*"
-          ]
-        }
-      }
-    }
-  ]
-}
-POLICY
+  policy = templatefile("${path.module}/templates/replica_policy.json.tmpl", {
+    tfstate_backends_region      = data.aws_region.tfstate_backends.name
+    tfstate_backends_bucket_arn  = aws_s3_bucket.tfstate_backends.arn
+    tfstate_backends_kms_key_arn = aws_kms_key.tfstate_backends.arn
+
+    replica_region      = data.aws_region.replica.name
+    replica_bucket_arn  = aws_s3_bucket.replica.arn
+    replica_kms_key_arn = aws_kms_key.replica.arn
+  })
 }
 
 resource "aws_iam_policy_attachment" "replication" {
@@ -144,6 +87,7 @@ data "aws_iam_policy_document" "replica_force_ssl" {
     }
   }
 }
+
 #---------------------------------------------------------------------------------------------------
 # Buckets
 #---------------------------------------------------------------------------------------------------
@@ -158,14 +102,24 @@ resource "aws_s3_bucket" "replica" {
   provider = aws.replica
 
   bucket        = "${var.backends_bucket_name}-replica"
-  force_destroy = var.s3_bucket_force_destroy
-  acl           = "private"
-
-  versioning {
-    enabled = true
-  }
+  force_destroy = var.buckets_force_destroy
 
   tags = local.tags
+}
+
+resource "aws_s3_bucket_acl" "replica" {
+  provider = aws.replica
+  bucket   = aws_s3_bucket.replica.id
+  acl      = "private"
+}
+
+resource "aws_s3_bucket_versioning" "replica" {
+  provider = aws.replica
+  bucket   = aws_s3_bucket.replica.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "replica" {

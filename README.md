@@ -1,55 +1,49 @@
-This terraform module facilitates the management of infrastructure represented
-by multiple terraform states in S3: 
+This terraform module facilitates the management of terraform state remote
+backends:
 
-- Creates one bucket to store all tf states you configure it to manage; so you 
-  create the bucket and associated replication / IAM once, and never worry about 
-  shared tf state again
-- Supports the subdivision of a "stack" into multiple terraform root 
-  modules. Each stack has its own base key in the bucket managed by 
-  multi-stack-backends. Eg a stack consisting of a root module for the VPC + 
-  network (subnets etc), another root module for the databases, and another 
-  root module for the EKS cluster, would have all 3 associated tf states
-  under "s3://multi-tfstate-bucket/your-stack-name".
-- One tfvars file shows all stacks managed by a multi-stack-backends 
-  instance, and all root-modules in that stack. No more guessing which 
-  root modules are interrelated!
-- Automatic generation of the `backend.tf` of each root module of each 
-  stack mentioned in the tfvars file, thus eliminating the chicken-and-egg 
-  dance that is otherwise required to provision each root module for sharing
-  in AWS S3.
-- Bucket replication and versioning and IAM roles to limit access to individual 
-  stack states
-  
-The list of stacks to manage is represented in a tfvars file: 
+- One bucket for any number of terraform state.
+- Support for the notion of "stack", consisting of multiple building blocks
+  in the form of terraform root modules. Eg a terraform state for a root
+  module focussed on a stack's network resources, another state for a root
+  module focussed on a stack's databases, another for a stack's EKS cluster,
+  etc.
+- Automatic generation of the `backend.tf` of each sub-stack (ie root module) of each
+  stack, thus eliminating the chicken-and-egg dance that is otherwise
+  required to provision a new stack.
+- Support for storing this module's state in s3 in same bucket (via
+  `this_tfstate_in_s3` variable).
+- Generate policies that can be used to control access to the backends
+  manager, and to all sub-stacks of specific stacks.
 
-stack ID -> module ID -> information about the stack (currently just 
-the path). 
+The list of stacks to manage is a tree:
 
-Example: 
+stack ID -> sub-stack ID -> information about the stack (currently just
+the path).
+
+## Examples
+
+Example:
+
 ```hcl
 # your main.tf for the tfstate manager
 module "tfstate_manager" {
-  source  = "schollii/multi-stack-backends/aws"
-  version = "0.6.1"
+  source = "schollii/multi-stack-backends/aws"
 
   stacks_map = {
     stack-1 = {
       network = {
-        path = "../stack1/network"
+        path = "../stack1-network"
       }
       cluster = {
-        path = "../stack1/cluster"
+        path = "../stack1-cluster"
       }
     },
     stack-2 = {
       network = {
-        path = "../stack2/network"
+        path = "../stack2-network"
       }
-      fargate = {
-        path = "../stack2/fargate"
-      }
-      databases = {
-        path = "../stack2/databases"
+      cluster = {
+        path = "../stack2-cluster"
       }
     },
   }
@@ -57,9 +51,81 @@ module "tfstate_manager" {
 ```
 
 See the [examples/simple/README.md](examples/simple/README.md) for details
-including diagrams that illustrate the different pieces managed by this 
-module. 
+including diagrams that illustrate the different pieces managed by this
+module.
 
-### Acknowledgements
+## Renaming the tfstates bucket
 
-My code used some of https://github.com/nozaq/terraform-aws-remote-state-s3-backend as starting point. 
+It may happen that the backends bucket (and therefore its replica) need to be renamed, eg following
+some naming policy changes in your organization. AWS does not provide a means of doing this
+directly. The following procedure is one that I use.
+
+1. WARN your team that no one can use terraform on this terraform module, and ENSURE THAT 
+   TERRAFORM PLAN SHOWS NO CHANGES NEEDED
+2. change the value of `backends_bucket_name` (this new value is referred to here
+   as `NEW_BACKENDS_BUCKET_NAME`)
+3. determine the path to the manager module in your tfstate. The easiest is to run `terraform state list | grep aws_s3_bucket look at your code or output of
+   terraform state list)
+4. run `script/rename-backends-manager-bucket.sh NEW_BUCKET_NAME MODULE_PATH` (per the license 
+   terms, this is provided as-is without any warranty - you assume all responsibility!)
+5. If you had any `terraform_remote_state` in your sub-stacks, point them to the new bucket name
+6. run `terraform apply` in any of the sub-stacks, this should show no init and no changes needed
+7. manually delete the 2 old buckets when you are satisfied
+
+## Upgrades
+
+### 0.6.x to 1.0
+
+1. (Optional) The module no longer assumes that IAM policies for the tfstate access are required.
+   These policies are not needed by the module, they are merely a convenience (making it easy for
+   you to control access to the tfstates stored in the backend bucket). To generate the policies as
+   in 0.6, set one or both `create_tfstate_access_polic*` variables to true, depending on your
+   needs.
+2. (Optional) The module no longer assumes a default set of tags. Only `var.extra_tags` is used, and
+   by default it is empty. The terraform plan will clearly say what the old values were, if you
+   need some of them.
+3. Rename variable `this_tfstate_in_s3` to `manager_tfstate_in_s3`
+4. The module now requires a value for `backends_bucket_name` (it no longer provides a default).
+   This won't likely affect you because you almost certainly had to specify a bucket name anyway,
+   due
+   to [AWS uniqueness constraints on S3 bucket names](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html).
+   But if you were able to not specify it (eg if you were the first to use that default bucket name
+   in yours AWS partition), you must now add `backends_bucket_name = "tfstate-s3-backends"`.
+   However, I highly recommend that you rename your backends bucket to something unique to you or
+   your organization / employer. Eg `ORG_NAME-GROUP_NAME-tfstate-backends`. The procedure to do this
+   is in a separate section of this readme.
+5. The module itself no longer defines providers, as recommended in the terraform documentation.
+   Rather, it requires they be passed in to the module. Therefore, before applying,
+    - ensure you have these two blocks (as done
+      in `examples/simple/tfstate-s3-manager/terraform.tf`):
+      ```hcl
+      provider "aws" {
+        alias  = "tfstate_backends"
+        region = "us-east-1"
+      }
+    
+      provider "aws" {
+        alias  = "tfstate_backends_replica"
+        region = "us-west-1"
+      }
+      ```
+    - add the following to the module block that references this module (as done in
+      `examples/simple/tfstate-s3-manager/terraform.tf`):
+      ```hcl
+      providers = {
+        aws = aws.tfstate_backends
+        aws.replica = aws.tfstate_backends_replica
+      }
+      ```
+6. (Optional) The module now uses the `aws_s3_bucket_*` resources instead of the inline blocks that
+   the AWS provider has deprecated, like acl, server-side encryption, etc. This will cause terraform
+   to plan generating those resources, unless you import them into your tfstate. I use the bash
+   script `scripts/upgrade-to-1.0.sh`. I recommend testing it first: open the script in an editor
+   and add an "echo" in front of the terraform commands to verify that it makes sense, as there are
+   too many possibilities to say for sure that the script will work as-is.
+
+## Acknowledgements
+
+My code used some of https://github.com/nozaq/terraform-aws-remote-state-s3-backend as starting
+point. 
+

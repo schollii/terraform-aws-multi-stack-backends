@@ -1,17 +1,13 @@
 terraform {
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source                = "hashicorp/aws"
+      configuration_aliases = [aws.replica]
     }
   }
-  required_version = ">= 0.14"
+  required_version = ">= 1.0"
 }
 
-provider "aws" {
-  region = "us-east-1"
-}
-
-provider "aws" {
-  alias  = "replica"
-  region = "us-west-1"
-}
+#provider "aws" {
+#  alias = "replica"
+#}
