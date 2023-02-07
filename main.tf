@@ -21,7 +21,7 @@ locals {
 }
 
 resource "local_file" "this_backend" {
-  count = var.this_tfstate_in_s3 ? 1 : 0
+  count = var.manager_tfstate_in_s3 ? 1 : 0
 
   filename        = "${path.root}/backend.tf"
   file_permission = "0644"

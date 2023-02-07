@@ -10,6 +10,12 @@ variable "manager_s3_key_prefix" {
   default     = "_manager_"
 }
 
+variable "manager_tfstate_in_s3" {
+  type        = bool
+  description = "Whether this module's tfstate should be in s3"
+  default     = false
+}
+
 variable "backends_bucket_name" {
   type        = string
   description = "Name of the tfstate backends bucket (must be unique across AWS region)"
@@ -38,12 +44,6 @@ variable "extra_tags" {
 variable "buckets_force_destroy" {
   type        = bool
   description = "Whether this bucket can be destroyed"
-  default     = false
-}
-
-variable "this_tfstate_in_s3" {
-  type        = bool
-  description = "Whether this module's tfstate should be in s3"
   default     = false
 }
 
