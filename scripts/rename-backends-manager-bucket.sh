@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set +eu
+
 usage() {
   echo
   echo "ERROR: missing command line arguments"
@@ -33,13 +34,28 @@ fi
 
 current_bucket=$3
 if [[ -z $current_bucket ]]; then
+  if [[ ! -f ./backend.tf ]]; then
+    echo "ERROR: No ./backend.tf file found. You must specify the bucket name as third arg."
+    exit 8
+  fi
+
   current_bucket=$(sed -En 's/ *bucket *= *"([a-z0-9][a-z0-9.-]+[a-z0-9])"/\1/p' backend.tf)
+  if [[ -z $current_bucket ]]; then
+    echo "ERROR: Could not determine current bucket from ./backend.tf."
+    exit 10
+  fi
+
   echo "Current bucket is: $current_bucket"
   read -p "Is this correct (y/n)? " -n 1 -r
   echo
   if [[ ! $REPLY =~ ^(y|Y)$ ]]; then
     exit 0
   fi
+fi
+
+if [[ $current_bucket == $new_bucket_name ]]; then
+  echo "ERROR: current and new bucket names are the same!!"
+  exit 5
 fi
 
 echo
@@ -55,8 +71,8 @@ terraform state rm $manager_state_prefix.aws_s3_bucket.replica
 echo
 echo "Running terraform apply"
 echo "which will create the new buckets, replace the lock table for new name,"
-echo "create a new `backend.tf` for manager, overwrite the `backend.tf` of all sub-stacks"
-echo "in `var.stacks_map`, etc"
+echo "create a new 'backend.tf' for manager, overwrite the 'backend.tf' of all sub-stacks"
+echo "in 'var.stacks_map', etc"
 echo
 terraform apply
 
@@ -67,3 +83,11 @@ aws s3 rm "s3://$new_bucket_name/_manager_" --recursive
 
 # move the manager's tfstate back into s3
 terraform init -migrate-state -force-copy
+
+echo
+echo "DONE!"
+echo "NOTE: VERIFY that all tfstates have been properly transfered. Eg, run 'terraform apply'"
+echo "in all substacks: no changes should be planned."
+echo "ONCE YOU ARE SATISFIED, YOU CAN MANUALLY DELETE THE TWO PREVIOUS BUCKETS."
+echo "Example: aws s3 rb \"s3://$current_bucket\" --force"
+echo "Example: aws s3 rb \"s3://${current_bucket}-replica\" --force"

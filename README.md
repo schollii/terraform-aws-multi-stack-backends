@@ -83,27 +83,16 @@ Here is a different procedure that has fewer steps, some are simpler than previo
 you don't need to delete the original bucket until the very end. It will be especially useful if you
 have many sub-stacks. HOWEVER I have not tested yet, so please test it first.
 
-1. change the value of `backends_bucket_name` (this new value is referred to here
+1. WARN your team that no one can use terraform on this code, and ENSURE THAT TERRAFORM PLAN SHOWS
+   NO CHANGES NEEDED
+2. change the value of `backends_bucket_name` (this new value is referred to here
    as `NEW_BACKENDS_BUCKET_NAME`)
-2. delete the `backend.tf` of this manager module
-3. run `terraform init -migrate-state` to bring the manager's tfstate back to local
-4. make terraform forget about the 2 current buckets:
-   ```
-   terraform state rm module.tfstate_backends.module.multi_stack_backends.aws_s3_bucket.tfstate_backends
-   terraform state rm module.tfstate_backends.module.multi_stack_backends.aws_s3_bucket.replica
-   ```
-5. run `terraform apply` which will create the new buckets, replace the lock table for new name,
-   create a new `backend.tf` for manager, overwrite the `backend.tf` of all sub-stacks
-   in `var.stacks_map`, etc
-6. copy tfstates to the new bucket just created, except the old manager state:
-   ```
-   aws s3 cp s3://BACKENDS_BUCKET_NAME s3://NEW_BACKENDS_BUCKET_NAME
-   aws s3 rm s3://NEW_BACKENDS_BUCKET_NAME/_manager_
-   ```
-7. run `terraform init -migrate-state` to move the manager's tfstate back into s3
-8. If you had any `terraform_remote_state` in your sub-stacks, point them to the new location
-9. running `terraform apply` in any of the sub-stacks should show no init and no changes needed
-10. manually delete the 2 old buckets
+3. determine the path to the manager module in your tfstate (look at your code or output of
+   terraform state list)
+4. run `script/rename-backends-manager-bucket.sh NEW_BUCKET_NAME MODULE_PATH`
+5. If you had any `terraform_remote_state` in your sub-stacks, point them to the new location
+6. running `terraform apply` in any of the sub-stacks should show no init and no changes needed
+7. manually delete the 2 old buckets
 
 ## Upgrades
 
