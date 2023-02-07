@@ -83,7 +83,8 @@ Here is a different procedure that has fewer steps, some are simpler than previo
 you don't need to delete the original bucket until the very end. It will be especially useful if you
 have many sub-stacks. HOWEVER I have not tested yet, so please test it first.
 
-1. change the value of `backends_bucket_name`
+1. change the value of `backends_bucket_name` (this new value is referred to here
+   as `NEW_BACKENDS_BUCKET_NAME`)
 2. delete the `backend.tf` of this manager module
 3. run `terraform init -migrate-state` to bring the manager's tfstate back to local
 4. make terraform forget about the 2 current buckets:
@@ -125,7 +126,8 @@ have many sub-stacks. HOWEVER I have not tested yet, so please test it first.
   is in a separate section of this readme.
 - The module no longer defines providers, as recommended in the terraform documentation. Therefore,
   before applying,
-    - ensure you have these two blocks (as done in `examples/simple/tfstate-s3-manager/terraform.tf`):
+    - ensure you have these two blocks (as done
+      in `examples/simple/tfstate-s3-manager/terraform.tf`):
       ```hcl
       provider "aws" {
         alias  = "tfstate_backends"
@@ -137,7 +139,7 @@ have many sub-stacks. HOWEVER I have not tested yet, so please test it first.
         region = "us-west-1"
       }
       ```
-    - add the following to the module block that references this module (as done in 
+    - add the following to the module block that references this module (as done in
       `examples/simple/tfstate-s3-manager/terraform.tf`):
       ```hcl
       providers = {
