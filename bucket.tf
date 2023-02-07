@@ -42,11 +42,12 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate_backends"
 }
 
 resource "aws_s3_bucket_replication_configuration" "tfstate_backends" {
-  bucket = aws_s3_bucket.tfstate_backends.id
-  role   = aws_iam_role.replication.arn
+  bucket     = aws_s3_bucket.tfstate_backends.id
+  role       = aws_iam_role.replication.arn
+  depends_on = [aws_s3_bucket_versioning.tfstate_backends]
 
   rule {
-    id     = "replica_configuration"
+    id = "replica_configuration"
     filter { prefix = "" }
     status = "Enabled"
 
@@ -61,13 +62,22 @@ resource "aws_s3_bucket_replication_configuration" "tfstate_backends" {
     }
 
     destination {
-      bucket             = aws_s3_bucket.replica.arn
+      bucket = aws_s3_bucket.replica.arn
       encryption_configuration {
         replica_kms_key_id = aws_kms_key.replica.arn
       }
-      storage_class      = "STANDARD"
+      storage_class = "STANDARD"
     }
   }
+}
+
+resource "aws_s3_bucket_public_access_block" "tfstate_bucket" {
+  bucket = aws_s3_bucket.tfstate_backends.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 data "aws_iam_policy_document" "state_force_ssl" {
@@ -94,15 +104,6 @@ data "aws_iam_policy_document" "state_force_ssl" {
 resource "aws_s3_bucket_policy" "state_force_ssl" {
   bucket = aws_s3_bucket.tfstate_backends.id
   policy = data.aws_iam_policy_document.state_force_ssl.json
-}
-
-resource "aws_s3_bucket_public_access_block" "tfstate_bucket" {
-  bucket = aws_s3_bucket.tfstate_backends.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
 }
 
 resource "aws_iam_policy" "multi_stack_backends_common" {
