@@ -5,5 +5,10 @@
 /.idea/misc.xml
 /.idea/terraform-aws-multi-stack-backends.iml
 /.idea/vcs.xml
-/examples/simple/tfstate-s3-manager/.terraform.lock.hcl
-/examples/simple/tfstate-s3-manager/.terraform
+
+**/.terraform.lock.hcl
+**/.terraform
+**/terraform.tfstate
+**/terraform.tfstate.*.backup
+/examples/simple/*/backend.tf
+/test/go.*
