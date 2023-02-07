@@ -65,4 +65,5 @@ func TestTerraformBasicExample(t *testing.T) {
 	// website::tag::3::Check the output against expected values.
 	// Verify we're getting back the outputs we expect
 	assert.Equal(t, "us-east-1", outputs.Tfstate_backends_bucket.Region)
+	assert.Equal(t, "us-west-1", outputs.Replica_bucket.Region)
 }
