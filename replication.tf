@@ -69,9 +69,9 @@ resource "aws_iam_policy_attachment" "replication" {
 
 data "aws_iam_policy_document" "replica_force_ssl" {
   statement {
-    sid       = "AllowSSLRequestsOnly"
-    actions   = ["s3:*"]
-    effect    = "Deny"
+    sid     = "AllowSSLRequestsOnly"
+    actions = ["s3:*"]
+    effect  = "Deny"
     resources = [
       aws_s3_bucket.replica.arn,
       "${aws_s3_bucket.replica.arn}/*"
