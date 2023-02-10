@@ -1,21 +1,44 @@
-This terraform module facilitates the management of terraform state remote backends:
+This terraform module makes it easy to boostrap the storage of terraform state remote backends
+in AWS S3. It is basically an alternative to using Terraform Cloud, insofar as tfstate storage goes.
 
-- One bucket for any number of terraform tfstates.
-- Based on the notion of "stacks", each consisting of multiple building blocks in the form of
-  terraform root modules (called sub-stacks). Eg a terraform state for a root module focussed on a
-  stack's network resources, another state for a root module focussed on a stack's databases,
-  another for a stack's EKS cluster, etc.
-- Automatic generation of the `backend.tf` of each sub-stack (ie root module) of each stack, thus
-  eliminating the chicken-and-egg dance that is otherwise required to provision a new stack.
-- Support for storing this module's state in s3 in same bucket (via `manager_tfstate_in_s3`
-  variable).
-- Generate policies that can be used to control access to the backends
-  manager, and to all sub-stacks of specific stacks.
+I created this module because I got tired of having to do a song and dance every time I was standing
+up a new stack: create terraform code in a separate folder from the stack code to create several AWS
+resources specific to the stack (namely its own bucket for storing its tfstate, its own lock table
+etc), run `terraform init` and  `apply`, then create a `backend.tf` file for that folder and
+run `terraform init -migrate-state`, THEN create a `backends.tf` file in the stack's folder with the
+right values based on the tfstate folder. That got tiring really quickly, and I didn't want to have
+to store tfstate in Terraform Cloud mostly because I didn't like the idea of depending on a third
+party (relative to AWS) to host the all-important tfstate which contains sensitive information.
 
-The list of stacks to manage is a tree:
+And then when your stacks get large enough, you'll want to subdivide them into smaller "substacks",
+eg one for the VPC/networking, one for some servers, one for databases, etc.
 
-stack ID -> sub-stack ID -> information about the stack (currently just
-the path).
+So this module automates much of this toil. In its simplest form, you use this module inside a "
+tfstate backends manager" root module that you create, you just have to give it a simple mapping
+of (arbitrary) stack names to their paths on the filesystem. Then run `terraform apply`, and finally
+run `terraform init -migrate-state -force-copy` for each stack and the manager module itself (so
+even the manager stores its state in S3!) and you're DONE! You can go about your business of writing
+your infra code! AND the bucket storing your tfstates will have auto-replication to a different
+region, both buckets will be server-side encrypted and versioned, each stack will have its own lock,
+etc.
+
+This "tfstate backends manager" module (maybe that's what I should have called it) supports
+more advanced uses as well:
+
+- any stack can have substacks; each will have its own key in the S3 bucket
+- you could have multiple "managers" in one AWS account, each can act as the host for a
+  separate set of stacks
+- the module can generate IAM policies for each stack that limit access to that stacks' tfstate only
+  in either read-only mode or read-write; you can then attach those policies to your IAM
+  users/roles/groups (you do that part)
+
+The list of stacks to manage is a tree-like map:
+
+stack ID -> sub-stack ID -> information about the stack or sub-stack
+
+Currently the info consists only of the filesystem path, but more info could be added in the future.
+When a stack does not have sub-stacks, you define just one sub-stack ID, and give it a name like
+"all" or "main".
 
 ## Examples
 
@@ -28,11 +51,8 @@ module "tfstate_manager" {
 
   stacks_map = {
     stack-1 = {
-      network = {
-        path = "../stack1-network"
-      }
-      cluster = {
-        path = "../stack1-cluster"
+      all = {
+        path = "../stack1"
       }
     },
     stack-2 = {
@@ -47,29 +67,43 @@ module "tfstate_manager" {
 }
 ```
 
+The keys like "network" and "cluster" are entirely up to you.
 See the [examples/simple/README.md](examples/simple/README.md) for details
 including diagrams that illustrate the different pieces managed by this
 module.
 
-## Renaming the tfstates bucket
+There isn't much more to using this module than the above and the examples. The remaining
+sections provide useful info for various tasks.
 
-It may happen that the backends bucket (and therefore its replica) need to be renamed, eg following
-some naming policy changes in your organization. AWS does not provide a means of doing this
-directly. The following procedure is one that I use.
+## Renaming a tfstates manager bucket
 
-1. WARN your team that no one can use terraform on this terraform module, and ENSURE THAT
-   TERRAFORM PLAN SHOWS NO CHANGES NEEDED.
-2. change the value of `backends_bucket_name` (this new value is referred to here
-   as `NEW_BACKENDS_BUCKET_NAME`).
-3. determine the path to the manager module in your tfstate. The easiest is to run `terraform state
-   list | grep aws_s3_bucket` look at your code or output of terraform state list).
-4. run `script/rename-backends-manager-bucket.sh NEW_BUCKET_NAME MODULE_PATH` (per the license
-   terms, this is provided as-is without any warranty - you assume all responsibility!).
-5. If you had any `terraform_remote_state` in your sub-stacks, point them to the new bucket name.
-6. run `terraform apply` in any of the sub-stacks, this should show no init and no changes needed.
-7. manually delete the 2 old buckets when you are satisfied it is safe to do so.
+It may happen that the backends manager bucket needs to be renamed. Eg,
+following some naming policy changes in your organization. Unfortunately AWS does not make this
+easy: buckets cannot be renamed. The following procedure is one that I use so that all AWS
+resources get renamed according to the new bucket name:
+
+1. Ensure that no one else will be running terraform apply on either the manager or any of its
+   stacks / sub-stacks.
+2. Change the value of `backends_bucket_name` used by the backends manager terraform code (this new
+   value is
+   referred to here as `NEW_BACKENDS_BUCKET_NAME`).
+3. Examine `scripts/rename-backends-manager-bucket.sh` to understand what it does. Test it out first
+   on your system, eg on the `examples/simple/tfstate-s3-manager` folder.
+   (REMINDER: per the license terms described in this git repo, this script is provided as-is
+   without any warranty implied - it is your responsibility to ensure that it will not cause loss
+   of data!).
+4. Run that script `scripts/rename-backends-manager-bucket.sh NEW_BUCKET_NAME`.
+5. Any of your `terraform_remote_state` data sources that point to the old bucket name of this
+   manager need to be have their bucket argument adjusted.
+6. Run `terraform plan` in all of the stacks managed by this backends manager, and confirm that no
+   init is needed and no changes are planned.
+7. Once you are satisfied that the new setup is working, you can manually delete the 2 old buckets.
+
+That should be it!
 
 ## Upgrades
+
+This section documents upgrades necessary between adjacent major releases.
 
 ### 0.6.x to 1.0
 
@@ -116,13 +150,13 @@ directly. The following procedure is one that I use.
       ```
 6. (Optional) The module now uses the `aws_s3_bucket_*` resources instead of the inline blocks that
    the AWS provider has deprecated, like acl, server-side encryption, etc. This will cause terraform
-   to plan generating those resources, unless you import them into your tfstate. I use the bash
-   script `scripts/upgrade-to-1.0.sh`. I recommend testing it first: open the script in an editor
-   and add an "echo" in front of the terraform commands to verify that it makes sense, as there are
-   too many possibilities to say for sure that the script will work as-is.
+   to plan creation of those resources. This is ok, but if you prefer (like me) not to, you can
+   import them into the tfstate. I use the bash script `scripts/upgrade-to-1.0.sh`. Again before
+   using it, examine it and check that it will work with your version of bash and your setup.
+   Testing is easy: add an "echo" in front of the terraform commands.
 
 ## Acknowledgements
 
-My code used some of https://github.com/nozaq/terraform-aws-remote-state-s3-backend as starting
+My code used some of https://github.com/nozaq/terraform-aws-remote-state-s3-backend as a starting
 point. 
 
