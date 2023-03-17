@@ -31,8 +31,6 @@ output "access_control_iam_policies_for_tfstates" {
   value = {
     common     = aws_iam_policy.multi_stack_backends_common.name
     manager    = one(aws_iam_policy.multi_stack_backends_manager[*].name)
-    stacks     = [for p in aws_iam_policy.multi_stack_backends_stack : p.name]
     sub_stacks = [for p in aws_iam_policy.multi_stack_backends_module : p.name]
-
   }
 }
