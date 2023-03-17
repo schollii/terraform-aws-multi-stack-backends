@@ -195,22 +195,3 @@ resource "aws_iam_policy" "multi_stack_backends_module" {
 }
 POLICY
 }
-
-resource "aws_iam_policy" "multi_stack_backends_stack" {
-  for_each = local.iam_stacks_map
-
-  name = "multi-stack-backends.${local.manager_stack_id}.${each.key}"
-
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": ["s3:GetObject", "s3:PutObject"],
-      "Resource": "${aws_s3_bucket.tfstate_backends.arn}/${each.key}/*"
-    }
-  ]
-}
-POLICY
-}
